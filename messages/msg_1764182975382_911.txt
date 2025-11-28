@@ -1,0 +1,8 @@
+from:test
+to:amaal
+subject:fgfere
+timestamp:Wed Nov 26 20:49:35 EET 2025
+isRead:false
+isArchived:false
+body:ererererwe
+

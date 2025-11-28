@@ -1,0 +1,9 @@
+user1:password1
+شش:ششش
+user2:password2
+test:test
+ش:فففف
+www:www
+admin:admin
+amaal:amaal
+amaalm:amaal

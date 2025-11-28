@@ -1,0 +1,8 @@
+from:admin
+to:test
+subject:Hello
+timestamp:Wed Nov 26 20:31:47 EET 2025
+isRead:false
+isArchived:false
+body:This is a real message!
+

@@ -1,0 +1,8 @@
+from:test
+to:amaal
+subject:amolaaa
+timestamp:Wed Nov 26 20:47:05 EET 2025
+isRead:false
+isArchived:false
+body:aaaa♥♥
+
