@@ -1,3 +1,4 @@
+// server/storage/MessageManager.java
 package server.storage;
 
 import server.models.Message;
@@ -14,7 +15,7 @@ public class MessageManager {
     public MessageManager() {
         this.userMessages = new ConcurrentHashMap<>();
         loadMessages();
-        System.out.println("✅ MessageManager initialized - Messages persistence ready");
+        System.out.println("MessageManager initialized - Messages persistence ready");
     }
 
     public String saveMessage(String from, String recipients, String subject, String body) {
@@ -29,25 +30,23 @@ public class MessageManager {
 
             long timestamp = System.currentTimeMillis();
 
-            // 1. حفظ نسخة في Inbox كل مستلم
             for (String to : recipList) {
                 Message msg = new Message(messageId, from, to, subject, body, timestamp);
                 String userKey = to.toLowerCase();
                 userMessages.computeIfAbsent(userKey, k -> new ArrayList<>()).add(0, msg);
-                System.out.println("✅ Saved to INBOX: " + to + " - Message: " + messageId);
+                System.out.println("Saved to INBOX: " + to + " - Message: " + messageId);
             }
 
-            // 2. حفظ نسخة في Sent عند المرسل
             Message sentMsg = new Message(messageId, from, recipList, subject, body, timestamp);
             String sentKey = from.toLowerCase() + "_sent";
             userMessages.computeIfAbsent(sentKey, k -> new ArrayList<>()).add(0, sentMsg);
-            System.out.println("✅ Saved to SENT: " + from + " - Message: " + messageId);
+            System.out.println("Saved to SENT: " + from + " - Message: " + messageId);
 
-            saveMessages(); // حفظ فوري
+            saveMessages();
             return messageId;
 
         } catch (Exception e) {
-            System.err.println("❌ Error saving message: " + e.getMessage());
+            System.err.println("Error saving message: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -60,7 +59,6 @@ public class MessageManager {
 
         List<Message> messages = userMessages.getOrDefault(key, new ArrayList<>());
 
-        // ترتيب الرسائل من الأحدث إلى الأقدم
         List<Message> sortedMessages = new ArrayList<>(messages);
         sortedMessages.sort((m1, m2) -> Long.compare(m2.getTimestamp(), m1.getTimestamp()));
 
@@ -91,7 +89,7 @@ public class MessageManager {
             result.add(line);
         }
 
-        System.out.println("📨 LIST " + folder + " for " + username + " - " + result.size() + " messages");
+        System.out.println("LIST " + folder + " for " + username + " - " + result.size() + " messages");
         return result;
     }
 
@@ -105,7 +103,7 @@ public class MessageManager {
                     if (canAccess) {
                         if (msg.getToList().contains(username) && !msg.getFrom().equals(username)) {
                             msg.setRead(true);
-                            saveMessages(); // حفظ فوري بعد التعديل
+                            saveMessages();
                         }
 
                         return String.format(
@@ -125,13 +123,13 @@ public class MessageManager {
 
     public boolean archiveMessage(String messageId, String username) {
         boolean result = updateMessageStatus(messageId, username, true);
-        if (result) saveMessages(); // حفظ فوري
+        if (result) saveMessages();
         return result;
     }
 
     public boolean restoreMessage(String messageId, String username) {
         boolean result = updateMessageStatus(messageId, username, false);
-        if (result) saveMessages(); // حفظ فوري
+        if (result) saveMessages();
         return result;
     }
 
@@ -141,8 +139,8 @@ public class MessageManager {
                 if (msg.getMessageId().equals(messageId) &&
                         msg.getToList().contains(username)) {
                     msg.setRead(true);
-                    saveMessages(); // حفظ فوري
-                    System.out.println("✅ Marked as read: " + messageId + " for user: " + username);
+                    saveMessages();
+                    System.out.println("Marked as read: " + messageId + " for user: " + username);
                     return true;
                 }
             }
@@ -154,7 +152,6 @@ public class MessageManager {
         boolean found = false;
         String userKey = username.toLowerCase();
 
-        // البحث في الـ inbox والـ sent
         String[] folders = {userKey, userKey + "_sent"};
 
         for (String folder : folders) {
@@ -164,7 +161,7 @@ public class MessageManager {
                     if (msg.getMessageId().equals(messageId)) {
                         msg.setArchived(archive);
                         found = true;
-                        System.out.println("✅ " + (archive ? "Archived" : "Restored") +
+                        System.out.println((archive ? "Archived" : "Restored") +
                                 " message: " + messageId + " for user: " + username);
                     }
                 }
@@ -208,7 +205,7 @@ public class MessageManager {
 
         if (removed > 0) {
             saveMessages();
-            System.out.println("🧹 Cleaned up " + removed + " old archived messages");
+            System.out.println("Cleaned up " + removed + " old archived messages");
         }
     }
 
@@ -216,8 +213,8 @@ public class MessageManager {
     private void loadMessages() {
         File file = new File(MESSAGES_FILE);
         if (!file.exists()) {
-            System.out.println("📂 No existing messages file - starting fresh");
-            createSampleData(); // إنشاء بيانات تجريبية
+            System.out.println("No existing messages file - starting fresh");
+            createSampleData();
             return;
         }
 
@@ -226,7 +223,6 @@ public class MessageManager {
             userMessages.clear();
             userMessages.putAll(loaded);
 
-            // تحديث nextId
             long maxId = userMessages.values().stream()
                     .flatMap(List::stream)
                     .mapToLong(msg -> {
@@ -239,24 +235,23 @@ public class MessageManager {
                     .orElse(0L);
 
             nextId = maxId + 1;
-            System.out.println("✅ Loaded " + countAllMessages() + " messages for " + userMessages.size() + " folders");
+            System.out.println("Loaded " + countAllMessages() + " messages for " + userMessages.size() + " folders");
 
         } catch (Exception e) {
-            System.out.println("❌ Failed to load messages: " + e.getMessage());
+            System.out.println("Failed to load messages: " + e.getMessage());
             e.printStackTrace();
-            createSampleData(); // إنشاء بيانات تجريبية إذا فشل التحميل
+            createSampleData();
         }
     }
 
     private void createSampleData() {
-        System.out.println("📝 Creating sample messages for testing...");
+        System.out.println("Creating sample messages for testing...");
 
-        // إنشاء بعض الرسائل التجريبية
         saveMessage("admin", "user1", "Welcome to MailLite", "Hello user1! Welcome to our mail system.");
         saveMessage("user1", "admin", "Thank you", "Thanks for the welcome message!");
         saveMessage("admin", "user1,user2", "System Update", "There will be a system update tonight.");
 
-        System.out.println("✅ Sample messages created");
+        System.out.println("Sample messages created");
     }
 
     private int countAllMessages() {
@@ -269,7 +264,6 @@ public class MessageManager {
         try {
             File file = new File(MESSAGES_FILE);
 
-            // التصحيح: التحقق من وجود parent directory
             File parentDir = file.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs();
@@ -277,15 +271,14 @@ public class MessageManager {
 
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
                 oos.writeObject(userMessages);
-                System.out.println("💾 Saved " + countAllMessages() + " messages to disk: " + file.getAbsolutePath());
+                System.out.println("Saved " + countAllMessages() + " messages to disk: " + file.getAbsolutePath());
             }
         } catch (IOException e) {
-            System.err.println("❌ Failed to save messages: " + e.getMessage());
+            System.err.println("Failed to save messages: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    // دالة مساعدة للتصحيح
     public void printAllMessages() {
         System.out.println("=== ALL MESSAGES ===");
         for (Map.Entry<String, List<Message>> entry : userMessages.entrySet()) {
@@ -301,11 +294,10 @@ public class MessageManager {
         System.out.println("====================");
     }
 
-    // دالة لفحص حالة ملف الرسائل
     public void checkMessagesFile() {
         File file = new File(MESSAGES_FILE);
-        System.out.println("📁 Messages file: " + file.getAbsolutePath());
-        System.out.println("📁 File exists: " + file.exists());
-        System.out.println("📁 File size: " + (file.exists() ? file.length() + " bytes" : "N/A"));
+        System.out.println("Messages file: " + file.getAbsolutePath());
+        System.out.println("File exists: " + file.exists());
+        System.out.println("File size: " + (file.exists() ? file.length() + " bytes" : "N/A"));
     }
 }

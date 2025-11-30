@@ -17,7 +17,7 @@ public class Logger {
         try {
             writer = new PrintWriter(new FileWriter(LOG_FILE, true));
         } catch (IOException e) {
-            System.err.println("❌ Failed to create log file: " + e.getMessage());
+            System.err.println("Failed to create log file: " + e.getMessage());
         }
     }
 
@@ -25,7 +25,7 @@ public class Logger {
         String timestamp = dateFormat.format(new Date());
         String logEntry = "[" + timestamp + "] " + message;
 
-        System.out.println("📝 " + logEntry);
+        System.out.println("Log: " + logEntry);
 
         if (writer != null) {
             writer.println(logEntry);

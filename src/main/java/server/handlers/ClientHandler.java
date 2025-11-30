@@ -1,3 +1,4 @@
+// server/handlers/ClientHandler.java
 package server.handlers;
 
 import server.gui.ServerGUI;
@@ -44,7 +45,7 @@ public class ClientHandler implements Runnable {
             String input;
             while ((input = in.readLine()) != null) {
                 if (input.trim().isEmpty()) continue;
-                log("← " + input);
+                log("Received: " + input);
                 processCommand(input.trim());
                 if (input.equalsIgnoreCase("QUIT")) break;
             }
@@ -157,7 +158,7 @@ public class ClientHandler implements Runnable {
         if (messageId != null) {
             out.println("250 MSGID " + messageId);
             sendUDPNotifications(to);
-            log("Message sent successfully → " + to + " | ID: " + messageId);
+            log("Message sent successfully to: " + to + " | ID: " + messageId);
         } else {
             out.println("550 SAVE FAILED");
         }
@@ -177,7 +178,7 @@ public class ClientHandler implements Runnable {
                     byte[] buf = notif.getBytes();
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, s.getIpAddress(), s.getUdpPort());
                     ds.send(packet);
-                    log("UDP Notification → " + r + " (unread: " + unread + ")");
+                    log("UDP Notification sent to: " + r + " (unread: " + unread + ")");
                 } catch (Exception ignored) {}
             }
         }

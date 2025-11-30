@@ -1,3 +1,4 @@
+// server/storage/UserManager.java
 package server.storage;
 
 import server.models.User;
@@ -13,14 +14,14 @@ public class UserManager {
     public UserManager() {
         loadUsers();
         createDefaultUsers();
-        System.out.println("✅ UserManager initialized with " + users.size() + " users");
+        System.out.println("UserManager initialized with " + users.size() + " users");
     }
 
     @SuppressWarnings("unchecked")
     private void loadUsers() {
         File file = new File(USERS_FILE);
         if (!file.exists()) {
-            System.out.println("📂 No users file found → starting fresh");
+            System.out.println("No users file found - starting fresh");
             return;
         }
 
@@ -33,16 +34,16 @@ public class UserManager {
                 user.setUsername(lowerKey);
                 users.put(lowerKey, user);
             }
-            System.out.println("✅ Loaded " + users.size() + " users from " + USERS_FILE);
+            System.out.println("Loaded " + users.size() + " users from " + USERS_FILE);
         } catch (Exception e) {
-            System.out.println("❌ Failed to load users: " + e.getMessage());
+            System.out.println("Failed to load users: " + e.getMessage());
             users.clear();
         }
     }
 
     private void createDefaultUsers() {
         if (users.isEmpty()) {
-            System.out.println("👤 Creating default users...");
+            System.out.println("Creating default users...");
             addUser("admin", "admin");
             addUser("user1", "123");
             addUser("user2", "123");
@@ -50,8 +51,8 @@ public class UserManager {
             addUser("enas", "123");
             addUser("ahmad", "123");
             addUser("sara", "123");
-            saveUsers(); // حفظ فوري
-            System.out.println("✅ Default users created successfully");
+            saveUsers();
+            System.out.println("Default users created successfully");
         }
     }
 
@@ -64,18 +65,18 @@ public class UserManager {
         User user = users.get(key);
 
         if (user == null) {
-            System.out.println("❌ AUTH FAILED → User not found: " + username);
+            System.out.println("AUTH FAILED - User not found: " + username);
             return false;
         }
 
         if (user.getPassword().equals(password)) {
             user.setLastLogin(System.currentTimeMillis());
             user.setStatus("ACTIVE");
-            saveUsers(); // حفظ فوري
-            System.out.println("✅ AUTH SUCCESS → " + user.getUsername());
+            saveUsers();
+            System.out.println("AUTH SUCCESS - " + user.getUsername());
             return true;
         } else {
-            System.out.println("❌ AUTH FAILED → Wrong password for: " + username);
+            System.out.println("AUTH FAILED - Wrong password for: " + username);
             return false;
         }
     }
@@ -88,14 +89,14 @@ public class UserManager {
 
         String key = username.trim().toLowerCase();
         if (users.containsKey(key)) {
-            System.out.println("❌ ADD USER FAILED → Already exists: " + username);
+            System.out.println("ADD USER FAILED - Already exists: " + username);
             return false;
         }
 
         User newUser = new User(key, password);
         users.put(key, newUser);
-        saveUsers(); // حفظ فوري
-        System.out.println("✅ USER ADDED → " + key);
+        saveUsers();
+        System.out.println("USER ADDED - " + key);
         return true;
     }
 
@@ -103,7 +104,7 @@ public class UserManager {
         User user = users.get(username.toLowerCase());
         if (user != null) {
             user.setStatus(status);
-            saveUsers(); // حفظ فوري
+            saveUsers();
         }
     }
 
@@ -111,7 +112,6 @@ public class UserManager {
         try {
             File file = new File(USERS_FILE);
 
-            // التصحيح: التحقق من وجود parent directory
             File parentDir = file.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs();
@@ -119,22 +119,21 @@ public class UserManager {
 
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
                 oos.writeObject(users);
-                System.out.println("💾 Saved " + users.size() + " users to disk: " + file.getAbsolutePath());
+                System.out.println("Saved " + users.size() + " users to disk: " + file.getAbsolutePath());
             }
         } catch (IOException e) {
-            System.err.println("❌ Failed to save users: " + e.getMessage());
+            System.err.println("Failed to save users: " + e.getMessage());
         }
     }
 
-    // باقي الدوال كما هي...
     public boolean removeUser(String username) {
         String key = username.trim().toLowerCase();
         if (users.remove(key) != null) {
             saveUsers();
-            System.out.println("✅ USER REMOVED → " + key);
+            System.out.println("USER REMOVED - " + key);
             return true;
         }
-        System.out.println("❌ REMOVE FAILED → User not found: " + username);
+        System.out.println("REMOVE FAILED - User not found: " + username);
         return false;
     }
 
@@ -164,7 +163,7 @@ public class UserManager {
         users.clear();
         new File(USERS_FILE).delete();
         createDefaultUsers();
-        System.out.println("🔄 UserManager has been RESET");
+        System.out.println("UserManager has been RESET");
     }
 
     public int getTotalUsers() {

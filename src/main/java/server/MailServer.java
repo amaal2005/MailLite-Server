@@ -1,3 +1,4 @@
+// server/MailServer.java
 package server;
 
 import server.gui.ServerGUI;
@@ -23,7 +24,6 @@ public class MailServer {
     private final int port;
     private final Logger logger;
 
-    // الـ managers المشتركة (نسخة واحدة لكل السيرفر)
     private final UserManager userManager;
     private final MessageManager messageManager;
     private final SessionManager sessionManager;
@@ -35,7 +35,6 @@ public class MailServer {
         this.serverGUI = gui;
         this.logger = new Logger();
 
-        // إنشاء نسخة واحدة فقط من كل مدير
         this.userManager = new UserManager();
         this.messageManager = new MessageManager();
         this.sessionManager = new SessionManager();
@@ -74,7 +73,6 @@ public class MailServer {
                     logToGUI("New client: " + clientSocket.getInetAddress());
                     logger.log("Client connected: " + clientSocket.getInetAddress());
 
-                    // تمرير الـ managers المشتركة + الـ GUI لكل عميل
                     ClientHandler handler = new ClientHandler(
                             clientSocket,
                             userManager,
@@ -129,7 +127,6 @@ public class MailServer {
         logger.close();
     }
 
-    // Getters مهمة للواجهة
     public SessionManager getSessionManager() { return sessionManager; }
     public MessageManager getMessageManager() { return messageManager; }
     public UserManager getUserManager() { return userManager; }

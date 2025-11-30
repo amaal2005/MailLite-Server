@@ -1,3 +1,4 @@
+// server/storage/SessionManager.java
 package server.storage;
 
 import server.models.UserSession;
@@ -7,25 +8,23 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
-    private Map<String, UserSession> activeSessions; // username -> session
+    private Map<String, UserSession> activeSessions;
 
     public SessionManager() {
         this.activeSessions = new ConcurrentHashMap<>();
-        System.out.println("✅ SessionManager initialized");
+        System.out.println("SessionManager initialized");
     }
 
     public UserSession createSession(String username, InetAddress ipAddress, int udpPort) {
-        // ⭐⭐ التصحيح: إزالة الجلسة القديمة إذا موجودة ⭐⭐
         if (activeSessions.containsKey(username)) {
-            System.out.println("🔄 Replacing existing session for: " + username);
+            System.out.println("Replacing existing session for: " + username);
             removeSession(username);
         }
 
         UserSession session = new UserSession(username, ipAddress, udpPort);
         activeSessions.put(username, session);
-        System.out.println("✅ Created session for: " + username + " from " + ipAddress.getHostAddress() + " UDP:" + udpPort);
+        System.out.println("Created session for: " + username + " from " + ipAddress.getHostAddress() + " UDP:" + udpPort);
 
-        // ⭐⭐ طباعة جميع اليوزرز المتصلين ⭐⭐
         printOnlineUsers();
         return session;
     }
@@ -33,10 +32,10 @@ public class SessionManager {
     public void removeSession(String username) {
         UserSession removed = activeSessions.remove(username);
         if (removed != null) {
-            System.out.println("🗑️ Removed session for: " + username);
+            System.out.println("Removed session for: " + username);
             printOnlineUsers();
         } else {
-            System.out.println("⚠️ No session found to remove for: " + username);
+            System.out.println("No session found to remove for: " + username);
         }
     }
 
@@ -54,50 +53,46 @@ public class SessionManager {
             String oldStatus = session.getStatus();
             session.setStatus(status);
             session.updateActivity();
-            System.out.println("🔄 Updated status for " + username + " from " + oldStatus + " to: " + status);
+            System.out.println("Updated status for " + username + " from " + oldStatus + " to: " + status);
         }
     }
 
-    // ⭐⭐ التصحيح: إضافة الـUDP port للمستخدمين المتصلين ⭐⭐
     public List<String> getOnlineUsers() {
         List<String> onlineUsers = new ArrayList<>();
-        System.out.println("🔍 Getting online users - Total sessions: " + activeSessions.size());
+        System.out.println("Getting online users - Total sessions: " + activeSessions.size());
 
         for (UserSession session : activeSessions.values()) {
-            System.out.println("   👤 Session: " + session.getUsername() +
+            System.out.println("   Session: " + session.getUsername() +
                     " - Authenticated: " + session.isAuthenticated() +
                     " - Status: " + session.getStatus() +
                     " - UDP Port: " + session.getUdpPort());
 
             if (session.isAuthenticated()) {
-                // ⭐⭐ إضافة الـUDP port للمعلومات ⭐⭐
                 String userInfo = session.getUsername() + " " +
                         session.getStatus() + " " +
                         session.getIpAddress().getHostAddress() + " " +
-                        session.getUdpPort() + " " +  // ⭐⭐ UDP port هنا ⭐⭐
+                        session.getUdpPort() + " " +
                         session.getLoginTime().getTime();
                 onlineUsers.add(userInfo);
-                System.out.println("   ✅ Added to online: " + session.getUsername() + " (UDP:" + session.getUdpPort() + ")");
+                System.out.println("   Added to online: " + session.getUsername() + " (UDP:" + session.getUdpPort() + ")");
             }
         }
 
-        System.out.println("👥 Online users count: " + onlineUsers.size());
+        System.out.println("Online users count: " + onlineUsers.size());
         return onlineUsers;
     }
 
-    // ⭐⭐ دالة جديدة: البحث عن مستخدم متصل بالإسم ⭐⭐
     public UserSession findRecipientSession(String recipient) {
         UserSession session = activeSessions.get(recipient);
         if (session != null && session.isAuthenticated()) {
-            System.out.println("✅ Recipient " + recipient + " is online and authenticated (UDP:" + session.getUdpPort() + ")");
+            System.out.println("Recipient " + recipient + " is online and authenticated (UDP:" + session.getUdpPort() + ")");
             return session;
         } else {
-            System.out.println("❌ Recipient " + recipient + " not found or not authenticated");
+            System.out.println("Recipient " + recipient + " not found or not authenticated");
             return null;
         }
     }
 
-    // ⭐⭐ دالة جديدة: جلب جميع الجلسات النشطة ⭐⭐
     public List<UserSession> getAllActiveSessions() {
         List<UserSession> active = new ArrayList<>();
         for (UserSession session : activeSessions.values()) {
@@ -108,23 +103,21 @@ public class SessionManager {
         return active;
     }
 
-    // ⭐⭐ دالة جديدة: التحقق من اتصال مستخدم مع الـUDP port ⭐⭐
     public boolean isUserOnlineWithUDP(String username) {
         UserSession session = activeSessions.get(username);
         boolean online = session != null && session.isAuthenticated() && session.getUdpPort() > 0;
-        System.out.println("🔍 User " + username + " online with UDP: " + online);
+        System.out.println("User " + username + " online with UDP: " + online);
         return online;
     }
 
-    // ⭐⭐ دالة طباعة اليوزرز المتصلين ⭐⭐
     private void printOnlineUsers() {
-        System.out.println("📊 === CURRENT ONLINE USERS ===");
+        System.out.println("=== CURRENT ONLINE USERS ===");
         int authenticatedCount = 0;
 
         for (UserSession session : activeSessions.values()) {
-            String authStatus = session.isAuthenticated() ? "✅ AUTH" : "❌ NOT AUTH";
+            String authStatus = session.isAuthenticated() ? "AUTH" : "NOT AUTH";
             String udpInfo = session.getUdpPort() > 0 ? "UDP:" + session.getUdpPort() : "NO_UDP";
-            System.out.println("   👤 " + session.getUsername() +
+            System.out.println("   " + session.getUsername() +
                     " - " + authStatus +
                     " - " + session.getStatus() +
                     " - " + udpInfo +
@@ -135,7 +128,7 @@ public class SessionManager {
             }
         }
 
-        System.out.println("📈 Total: " + activeSessions.size() + " sessions, " +
+        System.out.println("Total: " + activeSessions.size() + " sessions, " +
                 authenticatedCount + " authenticated users");
         System.out.println("=================================");
     }
@@ -158,14 +151,14 @@ public class SessionManager {
             long inactiveTime = currentTime - session.getLastActivity().getTime();
 
             if (inactiveTime > 30 * 60 * 1000) {
-                System.out.println("🚮 Removing inactive session: " + session.getUsername());
+                System.out.println("Removing inactive session: " + session.getUsername());
                 iterator.remove();
                 removed++;
             }
         }
 
         if (removed > 0) {
-            System.out.println("🧹 Cleaned up " + removed + " inactive sessions");
+            System.out.println("Cleaned up " + removed + " inactive sessions");
         }
     }
 
@@ -175,7 +168,6 @@ public class SessionManager {
         return online;
     }
 
-    // ⭐⭐ دوال مساعدة ⭐⭐
     public Map<String, String> getSessionInfo() {
         Map<String, String> sessionInfo = new HashMap<>();
         for (UserSession session : activeSessions.values()) {
@@ -193,7 +185,7 @@ public class SessionManager {
     public void reset() {
         int count = activeSessions.size();
         activeSessions.clear();
-        System.out.println("🔄 Reset all " + count + " sessions");
+        System.out.println("Reset all " + count + " sessions");
     }
 
     public int getTotalSessions() {

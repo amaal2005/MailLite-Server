@@ -1,3 +1,4 @@
+// server/models/UserSession.java
 package server.models;
 
 import java.io.Serializable;
@@ -8,7 +9,7 @@ public class UserSession implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String username;
-    private transient InetAddress ipAddress; // transient علشان ما يتسلسلش
+    private transient InetAddress ipAddress;
     private int udpPort;
     private boolean authenticated;
     private String status;
@@ -25,7 +26,6 @@ public class UserSession implements Serializable {
         this.lastActivity = new Date();
     }
 
-    // Getters and Setters
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 

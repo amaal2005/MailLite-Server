@@ -22,7 +22,6 @@ public class ServerGUI extends JFrame {
     private SessionManager sessionManager;
     private MessageManager messageManager;
 
-    // Components
     private JButton startServerBtn, stopServerBtn;
     private JTextArea logsArea;
     private JTable onlineUsersTable;
@@ -48,36 +47,31 @@ public class ServerGUI extends JFrame {
         setSize(1000, 700);
         setLocationRelativeTo(null);
 
-        // Server Control Buttons
         startServerBtn = new JButton("Start Server");
         stopServerBtn = new JButton("Stop Server");
         stopServerBtn.setEnabled(false);
 
-        // Logs Area
         logsArea = new JTextArea();
         logsArea.setEditable(false);
         logsArea.setBackground(Color.BLACK);
         logsArea.setForeground(Color.GREEN);
         logsArea.setFont(new Font("Consolas", Font.PLAIN, 12));
 
-        // Online Users Table
         String[] columns = {"Username", "Status", "Last Seen"};
         onlineUsersModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // جعل الجدول غير قابل للتعديل
+                return false;
             }
         };
         onlineUsersTable = new JTable(onlineUsersModel);
 
-        // Configuration Panel
         cleanupDaysField = new JTextField("30", 5);
         udpPortField = new JTextField("10000", 5);
         addUserBtn = new JButton("Add User");
         removeUserBtn = new JButton("Remove User");
         saveConfigBtn = new JButton("Save");
 
-        // Status Label
         statusLabel = new JLabel("Stopped");
         statusLabel.setForeground(Color.RED);
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
@@ -86,29 +80,23 @@ public class ServerGUI extends JFrame {
     private void setupLayout() {
         setLayout(new BorderLayout());
 
-        // Main Panel
         JPanel mainPanel = new JPanel(new BorderLayout());
 
-        // Server Control Panel (Top)
         JPanel controlPanel = new JPanel(new FlowLayout());
         controlPanel.add(startServerBtn);
         controlPanel.add(stopServerBtn);
         controlPanel.add(new JLabel("Server Status: "));
         controlPanel.add(statusLabel);
 
-        // Content Panel (Center)
         JPanel contentPanel = new JPanel(new GridLayout(1, 2, 10, 10));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Left Panel - Online Users and Logs
         JPanel leftPanel = new JPanel(new BorderLayout(5, 5));
 
-        // Online Users Panel
         JPanel usersPanel = new JPanel(new BorderLayout());
         usersPanel.setBorder(BorderFactory.createTitledBorder("Online Users"));
         usersPanel.add(new JScrollPane(onlineUsersTable), BorderLayout.CENTER);
 
-        // Logs Panel
         JPanel logsPanel = new JPanel(new BorderLayout());
         logsPanel.setBorder(BorderFactory.createTitledBorder("Logs"));
         logsPanel.add(new JScrollPane(logsArea), BorderLayout.CENTER);
@@ -116,7 +104,6 @@ public class ServerGUI extends JFrame {
         leftPanel.add(usersPanel, BorderLayout.NORTH);
         leftPanel.add(logsPanel, BorderLayout.CENTER);
 
-        // Right Panel - Configuration
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setBorder(BorderFactory.createTitledBorder("Configuration"));
 
@@ -139,7 +126,7 @@ public class ServerGUI extends JFrame {
         udpPanel.add(udpPortField);
         configPanel.add(udpPanel);
 
-        configPanel.add(new JLabel()); // Empty cell
+        configPanel.add(new JLabel());
         configPanel.add(saveConfigBtn);
 
         rightPanel.add(configPanel, BorderLayout.NORTH);
@@ -164,10 +151,8 @@ public class ServerGUI extends JFrame {
     private void startServer() {
         try {
             int port = 1234;
-            // ⭐⭐ إنشاء السيرفر مع تمرير this للواجهة ⭐⭐
             mailServer = new MailServer(port, this);
 
-            // Start server in separate thread
             new Thread(() -> {
                 mailServer.start();
             }).start();
@@ -180,7 +165,6 @@ public class ServerGUI extends JFrame {
             log("Server started");
             log("UDP notifier initialized on port " + port);
 
-            // إضافة سجلات تجريبية بعد بدء السيرفر
             addSampleLogs();
 
         } catch (Exception ex) {
@@ -228,7 +212,6 @@ public class ServerGUI extends JFrame {
         if (username != null && !username.trim().isEmpty()) {
             username = username.trim();
 
-            // التحقق من وجود اليوزر من قبل (من الـ UserManager الحقيقي)
             if (mailServer != null && mailServer.getUserManager().userExists(username)) {
                 JOptionPane.showMessageDialog(this,
                         "User '" + username + "' already exists!",
@@ -239,7 +222,6 @@ public class ServerGUI extends JFrame {
 
             String password = JOptionPane.showInputDialog(this, "Enter password:");
             if (password != null && !password.trim().isEmpty()) {
-                // إضافة اليوزر عبر الـ UserManager الحقيقي (مش log وهمي)
                 if (mailServer != null && mailServer.getUserManager().addUser(username, password)) {
                     log("User added successfully: " + username);
                     JOptionPane.showMessageDialog(this, "User " + username + " added successfully!");
@@ -249,6 +231,7 @@ public class ServerGUI extends JFrame {
             }
         }
     }
+
     private void removeUser() {
         String username = JOptionPane.showInputDialog(this, "Enter username to remove:");
         if (username != null && !username.trim().isEmpty()) {
@@ -295,7 +278,6 @@ public class ServerGUI extends JFrame {
     }
 
     private void startRefreshTimer() {
-        // ⭐⭐ مؤقت لتحديث الواجهة كل 3 ثواني ⭐⭐
         refreshTimer = new Timer();
         refreshTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -344,7 +326,6 @@ public class ServerGUI extends JFrame {
         });
     }
 
-    // دالة يمكن للسيرفر استدعاؤها لتحديث المستخدمين الحقيقيين
     public void refreshOnlineUsers(java.util.List<String> users) {
         SwingUtilities.invokeLater(() -> {
             onlineUsersModel.setRowCount(0);
