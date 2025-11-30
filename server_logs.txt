@@ -406,3 +406,9 @@
 [٢٠٢٥-١١-٢٨ ٢٠:٠٨:٢٣] Client connected: /127.0.0.1
 [٢٠٢٥-١١-٢٨ ٢٠:٠٨:٣٧] Client connected: /127.0.0.1
 [٢٠٢٥-١١-٢٨ ٢٠:١٠:٥٧] Server stopped
+[٢٠٢٥-١١-٣٠ ٢١:٤٠:١٩] MailLite Server STARTED on port 1234
+[٢٠٢٥-١١-٣٠ ٢١:٤١:٠٦] Client connected: /127.0.0.1
+[٢٠٢٥-١١-٣٠ ٢١:٤١:١٣] Client connected: /127.0.0.1
+[٢٠٢٥-١١-٣٠ ٢١:٤١:٢٥] Client connected: /127.0.0.1
+[٢٠٢٥-١١-٣٠ ٢١:٤١:٣٤] Client connected: /127.0.0.1
+[٢٠٢٥-١١-٣٠ ٢١:٥٣:٣٨] Server stopped
