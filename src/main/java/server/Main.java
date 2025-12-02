@@ -18,7 +18,6 @@ public class Main {
         });
     }
 
-    // في Main.java
     private static void deleteOldSerializedFiles() {
         String[] oldFiles = {
                 "users.dat",
