@@ -1,29 +1,21 @@
-// server/storage/UserManager.java
+// src/main/java/server/storage/SimpleUserManager.java
 package server.storage;
 
 import server.models.User;
-
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-public class UserManager {
+
+public class SimpleUserManager {
     private final Map<String, User> users = new ConcurrentHashMap<>();
-    // غير المسار إلى data/users.txt
     private static final String USERS_FILE = "data/users.txt";
 
-    public UserManager() {
+    public SimpleUserManager() {
         System.out.println("🔍 ===== FILE LOCATION DEBUG =====");
         System.out.println("Current Working Directory: " + new File(".").getAbsolutePath());
 
         File usersFile = new File(USERS_FILE);
         System.out.println("📂 Users file will be at: " + usersFile.getAbsolutePath());
-
-        // حذف ملف users.dat القديم إذا كان موجوداً
-        File oldFile = new File("users.dat");
-        if (oldFile.exists()) {
-            oldFile.delete();
-            System.out.println("🗑️ Deleted old users.dat file");
-        }
 
         ensureDataDirectory();
         loadUsers();
@@ -31,7 +23,7 @@ public class UserManager {
             createDefaultUsers();
             saveUsers();
         }
-        System.out.println("✅ UserManager initialized with " + users.size() + " users");
+        System.out.println("✅ SimpleUserManager initialized with " + users.size() + " users");
     }
 
     private void ensureDataDirectory() {
@@ -47,8 +39,10 @@ public class UserManager {
 
     private void loadUsers() {
         File file = new File(USERS_FILE);
+        System.out.println("🔍 Looking for users file at: " + file.getAbsolutePath());
+
         if (!file.exists()) {
-            System.out.println("📝 No users file found - will create new");
+            System.out.println("📝 File not found - will create new");
             return;
         }
 
@@ -118,23 +112,37 @@ public class UserManager {
             System.err.println("❌ Error saving users: " + e.getMessage());
         }
     }
+
     private void createDefaultUsers() {
-        if (users.isEmpty()) {
-            System.out.println("Creating default users...");
-            addUser("admin", "admin");
-            addUser("user1", "123");
-            addUser("user2", "123");
-            addUser("test", "test");
-            addUser("enas", "123");
-            addUser("ahmad", "123");
-            addUser("sara", "123");
-            saveUsers();
-            System.out.println("Default users created successfully");
+        System.out.println("📝 Creating default users...");
+
+        String[][] defaultUsers = {
+                {"admin", "admin123"},
+                {"user1", "password1"},
+                {"user2", "password2"},
+                {"test", "test123"},
+                {"enas", "enas123"},
+                {"ahmad", "ahmad123"},
+                {"sara", "sara123"}
+        };
+
+        for (String[] userPass : defaultUsers) {
+            if (userPass.length == 2) {
+                addUserInternal(userPass[0], userPass[1]);
+            }
         }
     }
 
+    private void addUserInternal(String username, String password) {
+        User user = new User(username, password);
+        user.setStatus("OFFLINE");
+        users.put(username.toLowerCase(), user);
+    }
+
+    // ========== Public Methods ==========
+
     public boolean authenticateUser(String username, String password) {
-        if (username == null || password == null || username.trim().isEmpty()) {
+        if (username == null || password == null) {
             return false;
         }
 
@@ -142,20 +150,21 @@ public class UserManager {
         User user = users.get(key);
 
         if (user == null) {
-            System.out.println("AUTH FAILED - User not found: " + username);
+            System.out.println("❌ User not found: " + username);
             return false;
         }
 
         if (user.getPassword().equals(password)) {
             user.setLastLogin(System.currentTimeMillis());
             user.setStatus("ACTIVE");
+            user.setLastSeen(System.currentTimeMillis());
             saveUsers();
-            System.out.println("AUTH SUCCESS - " + user.getUsername());
+            System.out.println("✅ Authentication successful: " + username);
             return true;
-        } else {
-            System.out.println("AUTH FAILED - Wrong password for: " + username);
-            return false;
         }
+
+        System.out.println("❌ Wrong password for user: " + username);
+        return false;
     }
 
     public boolean addUser(String username, String password) {
@@ -166,36 +175,37 @@ public class UserManager {
 
         String key = username.trim().toLowerCase();
         if (users.containsKey(key)) {
-            System.out.println("ADD USER FAILED - Already exists: " + username);
+            System.out.println("❌ User already exists: " + username);
             return false;
         }
 
         User newUser = new User(key, password);
+        newUser.setStatus("OFFLINE");
         users.put(key, newUser);
+
         saveUsers();
-        System.out.println("USER ADDED - " + key);
+        System.out.println("✅ User added: " + username);
         return true;
+    }
+
+    public boolean removeUser(String username) {
+        String key = username.trim().toLowerCase();
+        if (users.remove(key) != null) {
+            saveUsers();
+            System.out.println("✅ User removed: " + username);
+            return true;
+        }
+        System.out.println("❌ User not found: " + username);
+        return false;
     }
 
     public void updateUserStatus(String username, String status) {
         User user = users.get(username.toLowerCase());
         if (user != null) {
             user.setStatus(status);
+            user.setLastSeen(System.currentTimeMillis());
             saveUsers();
         }
-    }
-
-
-
-    public boolean removeUser(String username) {
-        String key = username.trim().toLowerCase();
-        if (users.remove(key) != null) {
-            saveUsers();
-            System.out.println("USER REMOVED - " + key);
-            return true;
-        }
-        System.out.println("REMOVE FAILED - User not found: " + username);
-        return false;
     }
 
     public boolean userExists(String username) {
@@ -208,23 +218,6 @@ public class UserManager {
 
     public List<String> getAllUsernames() {
         return new ArrayList<>(users.keySet());
-    }
-
-    public boolean changePassword(String username, String oldPass, String newPass) {
-        User user = users.get(username.toLowerCase());
-        if (user != null && user.getPassword().equals(oldPass)) {
-            user.setPassword(newPass);
-            saveUsers();
-            return true;
-        }
-        return false;
-    }
-
-    public void reset() {
-        users.clear();
-        new File(USERS_FILE).delete();
-        createDefaultUsers();
-        System.out.println("UserManager has been RESET");
     }
 
     public int getTotalUsers() {

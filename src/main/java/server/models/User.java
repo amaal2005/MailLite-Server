@@ -1,4 +1,3 @@
-// server/models/User.java
 package server.models;
 
 import java.io.Serializable;
@@ -12,16 +11,20 @@ public class User implements Serializable {
     private long lastLogin;
     private long lastSeen;
 
-    public User() {}
-
-    public User(String username, String password) {
-        this.username = username;
-        this.password = password;
+    // Default constructor for JSON
+    public User() {
         this.status = "OFFLINE";
         this.lastLogin = System.currentTimeMillis();
         this.lastSeen = System.currentTimeMillis();
     }
 
+    public User(String username, String password) {
+        this();
+        this.username = username;
+        this.password = password;
+    }
+
+    // Getters and Setters remain the same
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
@@ -39,4 +42,10 @@ public class User implements Serializable {
 
     public long getLastSeen() { return lastSeen; }
     public void setLastSeen(long lastSeen) { this.lastSeen = lastSeen; }
+
+    @Override
+    public String toString() {
+        return String.format("User{username='%s', status='%s', lastLogin=%d}",
+                username, status, lastLogin);
+    }
 }

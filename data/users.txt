@@ -1,0 +1,12 @@
+# MailLite Users File
+# Format: username|password|status|lastLogin|lastSeen
+# Saved at: Tue Dec 02 21:40:09 EET 2025
+
+user1|123|OFFLINE|١٧٦٤٧٠٠١٢١٩٣٧|١٧٦٤٧٠٠١٢١٩٣٧
+user2|123|OFFLINE|١٧٦٤٧٠٠١٢١٩٣٧|١٧٦٤٧٠٠١٢١٩٣٧
+q|q|OFFLINE|١٧٦٤٧٠٤٢٧٣٨٦٤|١٧٦٤٧٠٤٤٠٩٩١٧
+test|test|OFFLINE|١٧٦٤٧٠٠١٢١٩٣٨|١٧٦٤٧٠٠١٢١٩٣٨
+enas|123|OFFLINE|١٧٦٤٧٠٠١٢١٩٣٩|١٧٦٤٧٠٠١٢١٩٣٩
+t|t|OFFLINE|١٧٦٤٧٠٤٣٢٤٨٢٤|١٧٦٤٧٠٤٣٩٢٣٣٨
+sara|123|OFFLINE|١٧٦٤٧٠٠١٢١٩٤١|١٧٦٤٧٠٠١٢١٩٤١
+admin|admin|OFFLINE|١٧٦٤٧٠٢٦٨٢٧٧٤|١٧٦٤٧٠٢٦٩٩٦٢٥

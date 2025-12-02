@@ -1,4 +1,3 @@
-// server/storage/MessageManager.java
 package server.storage;
 
 import server.models.Message;
@@ -6,21 +5,28 @@ import server.models.Message;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MessageManager {
     private final Map<String, List<Message>> userMessages;
-    private static final String MESSAGES_FILE = "messages.dat";
-    private long nextId = 1;
+    private static final String MESSAGES_FILE = "data/messages.dat";
+    private AtomicLong nextId;
+
+    // إحصائيات
+    private Map<String, Integer> sendCounts = new ConcurrentHashMap<>();
+    private Map<String, Integer> listCounts = new ConcurrentHashMap<>();
+    private Map<String, Integer> retrCounts = new ConcurrentHashMap<>();
 
     public MessageManager() {
         this.userMessages = new ConcurrentHashMap<>();
+        this.nextId = new AtomicLong(1);
         loadMessages();
-        System.out.println("MessageManager initialized - Messages persistence ready");
+        System.out.println("✅ MessageManager initialized");
     }
 
     public String saveMessage(String from, String recipients, String subject, String body) {
         try {
-            String messageId = "msg_" + System.currentTimeMillis() + "_" + (nextId++);
+            String messageId = "MSG_" + System.currentTimeMillis() + "_" + nextId.getAndIncrement();
             List<String> recipList = Arrays.stream(recipients.split(","))
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
@@ -30,24 +36,28 @@ public class MessageManager {
 
             long timestamp = System.currentTimeMillis();
 
+            // حفظ لكل مستلم (INBOX)
             for (String to : recipList) {
                 Message msg = new Message(messageId, from, to, subject, body, timestamp);
                 String userKey = to.toLowerCase();
                 userMessages.computeIfAbsent(userKey, k -> new ArrayList<>()).add(0, msg);
-                System.out.println("Saved to INBOX: " + to + " - Message: " + messageId);
             }
 
+            // حفظ في SENT للمرسل
             Message sentMsg = new Message(messageId, from, recipList, subject, body, timestamp);
             String sentKey = from.toLowerCase() + "_sent";
             userMessages.computeIfAbsent(sentKey, k -> new ArrayList<>()).add(0, sentMsg);
-            System.out.println("Saved to SENT: " + from + " - Message: " + messageId);
+
+            // تحديث الإحصائيات
+            sendCounts.merge(from, 1, Integer::sum);
 
             saveMessages();
+
+            System.out.println("📤 Message saved: " + messageId + " from " + from + " to " + recipients);
             return messageId;
 
         } catch (Exception e) {
-            System.err.println("Error saving message: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Error saving message: " + e.getMessage());
             return null;
         }
     }
@@ -59,6 +69,7 @@ public class MessageManager {
 
         List<Message> messages = userMessages.getOrDefault(key, new ArrayList<>());
 
+        // ترتيب تنازلي حسب الوقت
         List<Message> sortedMessages = new ArrayList<>(messages);
         sortedMessages.sort((m1, m2) -> Long.compare(m2.getTimestamp(), m1.getTimestamp()));
 
@@ -70,26 +81,33 @@ public class MessageManager {
         List<String> result = new ArrayList<>();
 
         for (Message msg : messages) {
+            boolean include = true;
+
             if ("ARCHIVE".equalsIgnoreCase(folder)) {
-                if (!msg.isArchived()) continue;
+                if (!msg.isArchived()) include = false;
             } else {
-                if (msg.isArchived()) continue;
+                if (msg.isArchived()) include = false;
             }
 
             if ("UNREAD".equalsIgnoreCase(folder) && msg.isRead()) {
-                continue;
+                include = false;
             }
 
-            String line = String.format("%s %s %d %d %s",
-                    msg.getMessageId(),
-                    msg.getFrom(),
-                    msg.getBody().length(),
-                    msg.getTimestamp(),
-                    msg.getSubject());
-            result.add(line);
+            if (include) {
+                String line = String.format("%s %s %d %d %s",
+                        msg.getMessageId(),
+                        msg.getFrom(),
+                        msg.getBody().length(),
+                        msg.getTimestamp(),
+                        msg.getSubject());
+                result.add(line);
+            }
         }
 
-        System.out.println("LIST " + folder + " for " + username + " - " + result.size() + " messages");
+        // تحديث إحصائيات LIST
+        listCounts.merge(username, 1, Integer::sum);
+
+        System.out.println("📋 LIST " + folder + " for " + username + " - " + result.size() + " messages");
         return result;
     }
 
@@ -101,17 +119,22 @@ public class MessageManager {
                             msg.getToList().contains(username);
 
                     if (canAccess) {
+                        // تحديث حالة القراءة إذا كان المستلم
                         if (msg.getToList().contains(username) && !msg.getFrom().equals(username)) {
                             msg.setRead(true);
                             saveMessages();
                         }
 
+                        // تحديث إحصائيات RETR
+                        retrCounts.merge(username, 1, Integer::sum);
+
                         return String.format(
-                                "214 FROM:%s\n214 TO:%s\n214 SUBJ:%s\n214 TIMESTAMP:%d\n214 BODY\n%s",
+                                "214 FROM:%s\n214 TO:%s\n214 SUBJ:%s\n214 TIMESTAMP:%d\n214 BODYLEN:%d\n214 BODY\n%s",
                                 msg.getFrom(),
                                 msg.getToAsString(),
                                 msg.getSubject(),
                                 msg.getTimestamp(),
+                                msg.getBody().length(),
                                 msg.getBody()
                         );
                     }
@@ -122,15 +145,11 @@ public class MessageManager {
     }
 
     public boolean archiveMessage(String messageId, String username) {
-        boolean result = updateMessageStatus(messageId, username, true);
-        if (result) saveMessages();
-        return result;
+        return updateMessageArchiveStatus(messageId, username, true);
     }
 
     public boolean restoreMessage(String messageId, String username) {
-        boolean result = updateMessageStatus(messageId, username, false);
-        if (result) saveMessages();
-        return result;
+        return updateMessageArchiveStatus(messageId, username, false);
     }
 
     public boolean markAsRead(String messageId, String username) {
@@ -140,7 +159,7 @@ public class MessageManager {
                         msg.getToList().contains(username)) {
                     msg.setRead(true);
                     saveMessages();
-                    System.out.println("Marked as read: " + messageId + " for user: " + username);
+                    System.out.println("📌 Marked as read: " + messageId);
                     return true;
                 }
             }
@@ -148,10 +167,11 @@ public class MessageManager {
         return false;
     }
 
-    private boolean updateMessageStatus(String messageId, String username, boolean archive) {
+    private boolean updateMessageArchiveStatus(String messageId, String username, boolean archive) {
         boolean found = false;
         String userKey = username.toLowerCase();
 
+        // البحث في INBOX و SENT
         String[] folders = {userKey, userKey + "_sent"};
 
         for (String folder : folders) {
@@ -161,11 +181,15 @@ public class MessageManager {
                     if (msg.getMessageId().equals(messageId)) {
                         msg.setArchived(archive);
                         found = true;
-                        System.out.println((archive ? "Archived" : "Restored") +
-                                " message: " + messageId + " for user: " + username);
+                        System.out.println((archive ? "🗑️ Archived" : "🔄 Restored") +
+                                ": " + messageId);
                     }
                 }
             }
+        }
+
+        if (found) {
+            saveMessages();
         }
 
         return found;
@@ -195,25 +219,52 @@ public class MessageManager {
         return total;
     }
 
-    public void cleanupOldMessages(int days) {
+    public int cleanupOldMessages(int days) {
         long cutoff = System.currentTimeMillis() - (days * 24L * 60 * 60 * 1000);
         int removed = 0;
 
         for (List<Message> messages : userMessages.values()) {
-            removed += messages.removeIf(msg -> msg.isArchived() && msg.getTimestamp() < cutoff) ? 1 : 0;
+            Iterator<Message> iterator = messages.iterator();
+            while (iterator.hasNext()) {
+                Message msg = iterator.next();
+                if (msg.isArchived() && msg.getTimestamp() < cutoff) {
+                    iterator.remove();
+                    removed++;
+                }
+            }
         }
 
         if (removed > 0) {
             saveMessages();
-            System.out.println("Cleaned up " + removed + " old archived messages");
+            System.out.println("🧹 Cleaned " + removed + " old archived messages (older than " + days + " days)");
         }
+
+        return removed;
+    }
+
+    public Map<String, Integer> getSendSummaries() {
+        return new HashMap<>(sendCounts);
+    }
+
+    public Map<String, Integer> getListCounts() {
+        return new HashMap<>(listCounts);
+    }
+
+    public Map<String, Integer> getRetrCounts() {
+        return new HashMap<>(retrCounts);
     }
 
     @SuppressWarnings("unchecked")
     private void loadMessages() {
         File file = new File(MESSAGES_FILE);
+        File parentDir = file.getParentFile();
+
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
         if (!file.exists()) {
-            System.out.println("No existing messages file - starting fresh");
+            System.out.println("📝 No existing messages file - creating fresh database");
             createSampleData();
             return;
         }
@@ -223,35 +274,44 @@ public class MessageManager {
             userMessages.clear();
             userMessages.putAll(loaded);
 
+            // حساب أعلى ID
             long maxId = userMessages.values().stream()
                     .flatMap(List::stream)
                     .mapToLong(msg -> {
                         try {
                             String[] parts = msg.getMessageId().split("_");
-                            return Long.parseLong(parts[parts.length - 1]);
-                        } catch (Exception e) { return 0L; }
+                            if (parts.length >= 3) {
+                                return Long.parseLong(parts[2]);
+                            }
+                        } catch (Exception e) { }
+                        return 0L;
                     })
                     .max()
                     .orElse(0L);
 
-            nextId = maxId + 1;
-            System.out.println("Loaded " + countAllMessages() + " messages for " + userMessages.size() + " folders");
+            nextId.set(maxId + 1);
+            System.out.println("✅ Loaded " + countAllMessages() + " messages for " +
+                    userMessages.size() + " folders");
 
         } catch (Exception e) {
-            System.out.println("Failed to load messages: " + e.getMessage());
-            e.printStackTrace();
+            System.out.println("❌ Failed to load messages: " + e.getMessage());
             createSampleData();
         }
     }
 
     private void createSampleData() {
-        System.out.println("Creating sample messages for testing...");
+        System.out.println("📝 Creating sample messages...");
 
-        saveMessage("admin", "user1", "Welcome to MailLite", "Hello user1! Welcome to our mail system.");
-        saveMessage("user1", "admin", "Thank you", "Thanks for the welcome message!");
-        saveMessage("admin", "user1,user2", "System Update", "There will be a system update tonight.");
+        saveMessage("admin", "user1", "Welcome to MailLite",
+                "Hello user1! Welcome to our mail system.");
+        saveMessage("user1", "admin", "Thank you",
+                "Thanks for the welcome message!");
+        saveMessage("admin", "user1,user2", "System Update",
+                "There will be a system update tonight at 2 AM.");
+        saveMessage("user2", "admin", "Question",
+                "When will the maintenance be completed?");
 
-        System.out.println("Sample messages created");
+        System.out.println("✅ Sample messages created");
     }
 
     private int countAllMessages() {
@@ -263,41 +323,45 @@ public class MessageManager {
     private void saveMessages() {
         try {
             File file = new File(MESSAGES_FILE);
-
             File parentDir = file.getParentFile();
+
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs();
             }
 
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
                 oos.writeObject(userMessages);
-                System.out.println("Saved " + countAllMessages() + " messages to disk: " + file.getAbsolutePath());
+                System.out.println("💾 Saved " + countAllMessages() + " messages to disk");
             }
         } catch (IOException e) {
-            System.err.println("Failed to save messages: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Failed to save messages: " + e.getMessage());
         }
     }
 
     public void printAllMessages() {
-        System.out.println("=== ALL MESSAGES ===");
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("📦 ALL MESSAGES IN DATABASE");
+        System.out.println("=".repeat(60));
+
         for (Map.Entry<String, List<Message>> entry : userMessages.entrySet()) {
-            System.out.println("Folder: " + entry.getKey() + " - " + entry.getValue().size() + " messages");
+            System.out.println("\n📁 Folder: " + entry.getKey() +
+                    " (" + entry.getValue().size() + " messages)");
+
             for (Message msg : entry.getValue()) {
-                System.out.println("  " + msg.getMessageId() +
-                        " - From: " + msg.getFrom() +
-                        " - Subject: " + msg.getSubject() +
-                        " - Archived: " + msg.isArchived() +
-                        " - Read: " + msg.isRead());
+                System.out.println("   📧 ID: " + msg.getMessageId() +
+                        " | From: " + msg.getFrom() +
+                        " | To: " + msg.getToAsString() +
+                        " | Subject: " + msg.getSubject() +
+                        " | Archived: " + (msg.isArchived() ? "✅" : "❌") +
+                        " | Read: " + (msg.isRead() ? "✅" : "❌"));
             }
         }
-        System.out.println("====================");
+        System.out.println("=".repeat(60) + "\n");
+    }
+    // أضف هذه الدالة في server/storage/MessageManager.java
+    public int getTotalMessagesCount() {
+        return countAllMessages();
     }
 
-    public void checkMessagesFile() {
-        File file = new File(MESSAGES_FILE);
-        System.out.println("Messages file: " + file.getAbsolutePath());
-        System.out.println("File exists: " + file.exists());
-        System.out.println("File size: " + (file.exists() ? file.length() + " bytes" : "N/A"));
-    }
+
 }
