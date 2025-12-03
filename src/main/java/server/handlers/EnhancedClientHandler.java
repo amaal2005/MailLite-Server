@@ -61,7 +61,6 @@ public class EnhancedClientHandler implements Runnable {
 
                 if (input.equalsIgnoreCase("QUIT")) break;
 
-                // تحديث آخر نشاط
                 if (currentSession != null) {
                     currentSession.updateActivity();
                 }
@@ -161,7 +160,6 @@ public class EnhancedClientHandler implements Runnable {
             logger.logAuth(username, true, ip);
             logToGUI("✅ AUTH SUCCESS: " + username);
 
-            // إرسال إشعار للمستخدمين الآخرين
             if (udpNotifier != null) {
                 udpNotifier.broadcastStatus(username, "ACTIVE");
             }
@@ -204,7 +202,7 @@ public class EnhancedClientHandler implements Runnable {
             return;
         }
 
-        if (bodyLen > 64 * 1024) { // 64KB limit
+        if (bodyLen > 64 * 1024) {
             out.println("550 MESSAGE TOO LARGE");
             return;
         }
@@ -219,7 +217,7 @@ public class EnhancedClientHandler implements Runnable {
             totalRead += read;
         }
 
-        in.readLine(); // Read the empty line after body
+        in.readLine();
 
         String body = new String(bodyChars, 0, totalRead);
         String messageId = messageManager.saveMessage(from, to, subject, body);
@@ -230,7 +228,6 @@ public class EnhancedClientHandler implements Runnable {
             logger.logSend(from, to, messageId, bodyLen);
             logToGUI("📤 Message sent: " + from + " -> " + to);
 
-            // إرسال إشعارات UDP للمستلمين
             if (udpNotifier != null) {
                 for (String recipient : to.split(",")) {
                     String rec = recipient.trim();
@@ -350,7 +347,6 @@ public class EnhancedClientHandler implements Runnable {
             logger.logRosterChange(username, oldStatus, status);
             logToGUI("👤 Status update: " + username + " -> " + status);
 
-            // إرسال إشعار للمستخدمين الآخرين
             if (udpNotifier != null) {
                 udpNotifier.broadcastStatus(username, status);
             }
@@ -397,7 +393,6 @@ public class EnhancedClientHandler implements Runnable {
     }
 
     private void handleExport(String params) {
-        // هذا الأمر للعميل - السيرفر فقط يوافق
         out.println("250 EXPORT READY");
         logger.log("💾 EXPORT requested by " + currentSession.getUsername());
     }
@@ -421,11 +416,9 @@ public class EnhancedClientHandler implements Runnable {
             if (currentSession != null && currentSession.isAuthenticated()) {
                 String username = currentSession.getUsername();
 
-                // تحديث حالة المستخدم
                 sessionManager.removeSession(username);
                 userManager.updateUserStatus(username, "OFFLINE");
 
-                // إرسال إشعار للمستخدمين الآخرين
                 if (udpNotifier != null) {
                     udpNotifier.broadcastStatus(username, "OFFLINE");
                 }

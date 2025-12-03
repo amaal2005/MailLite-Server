@@ -60,10 +60,8 @@ public class MailServer {
         }
 
         try {
-            // بدء UDP Notifier أولاً
             startUDPNotifier();
 
-            // بدء TCP Server
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
             running = true;
@@ -71,10 +69,8 @@ public class MailServer {
             logger.log("🚀 Server started successfully on port " + port);
             serverGUI.log("✅ Server started on port " + port);
 
-            // بدء المهام الدورية
             startMaintenanceTasks();
 
-            // بدء استقبال العملاء
             acceptClients();
 
         } catch (IOException e) {
@@ -95,7 +91,7 @@ public class MailServer {
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    clientSocket.setSoTimeout(30000); // 30 ثانية timeout
+                    clientSocket.setSoTimeout(30000);
 
                     String clientIP = clientSocket.getInetAddress().getHostAddress();
                     logger.log("🔗 New client connected from " + clientIP);
@@ -123,23 +119,19 @@ public class MailServer {
     }
 
     private void startMaintenanceTasks() {
-        // 1. Auto-Away كل 10 ثواني
         maintenanceScheduler.scheduleAtFixedRate(() -> {
             checkAutoAway();
         }, 5, 10, TimeUnit.SECONDS);
 
-        // 2. تحديث قائمة المتصلين كل 5 ثواني
         maintenanceScheduler.scheduleAtFixedRate(() -> {
             updateOnlineUsers();
         }, 2, 5, TimeUnit.SECONDS);
 
-        // 3. تنظيف الجلسات غير النشطة كل دقيقة
         maintenanceScheduler.scheduleAtFixedRate(() -> {
             sessionManager.cleanupInactiveSessions();
             logger.log("🧹 Cleaned inactive sessions");
         }, 1, 1, TimeUnit.MINUTES);
 
-        // 4. تنظيف الرسائل المؤرشفة كل ساعة
         maintenanceScheduler.scheduleAtFixedRate(() -> {
             int removed = messageManager.cleanupOldMessages(cleanupDays);
             if (removed > 0) {
@@ -148,7 +140,6 @@ public class MailServer {
             }
         }, 1, 1, TimeUnit.HOURS);
 
-        // 5. طباعة الإحصائيات كل 5 دقائق
         maintenanceScheduler.scheduleAtFixedRate(() -> {
             logger.printStatistics();
         }, 5, 5, TimeUnit.MINUTES);
@@ -163,15 +154,12 @@ public class MailServer {
                 String username = session.getUsername();
                 String oldStatus = session.getStatus();
 
-                // تحديث الحالة
                 session.setStatus("AWAY");
                 sessionManager.updateUserStatus(username, "AWAY");
                 userManager.updateUserStatus(username, "AWAY");
 
-                // تسجيل في السجلات
                 logger.logRosterChange(username, oldStatus, "AWAY");
 
-                // إرسال إشعار للمستخدمين الآخرين
                 if (udpNotifier != null) {
                     udpNotifier.broadcastStatus(username, "AWAY");
                 }
@@ -186,7 +174,6 @@ public class MailServer {
             serverGUI.refreshOnlineUsers(sessionManager.getOnlineUsers());
         }
 
-        // إرسال تحديث عبر UDP لجميع العملاء
         if (udpNotifier != null) {
             udpNotifier.broadcastOnlineList();
         }
@@ -199,7 +186,6 @@ public class MailServer {
         logger.log("⚙️ Configuration updated - Cleanup: " + cleanupDays +
                 " days, UDP Port: " + udpPort);
 
-        // إعادة تشغيل UDP Notifier إذا تغير البورت
         if (udpNotifier != null && udpNotifier.isRunning()) {
             udpNotifier.stopNotifier();
             startUDPNotifier();
@@ -212,7 +198,6 @@ public class MailServer {
         running = false;
         logger.log("🛑 Server shutting down...");
 
-        // إغلاق كل شيء بشكل منظم
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();

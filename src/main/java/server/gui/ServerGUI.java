@@ -156,7 +156,6 @@ public class ServerGUI extends JFrame {
     }
 
     private void controlLabel() {
-        // هذه الدالة فارغة - ربما بقايا من كود قديم
     }
 
     private void setupEventHandlers() {
@@ -184,10 +183,10 @@ public class ServerGUI extends JFrame {
                 return;
             }
 
-            int tcpPort = 1234; // Port افتراضي
+            int tcpPort = 1234;
             mailServer = new MailServer(tcpPort, this);
 
-            // تحديث الإعدادات
+
             mailServer.updateConfiguration(cleanupDays, udpPort);
 
             new Thread(() -> {
@@ -221,7 +220,7 @@ public class ServerGUI extends JFrame {
             statusLabel.setText("Stopped");
             statusLabel.setForeground(Color.RED);
             log("🛑 Server stopped");
-            clearOnlineUsers(); // ✅ تم التصحيح هنا - أصبحت public
+            clearOnlineUsers();
             updateStats();
         }
     }
@@ -325,7 +324,7 @@ public class ServerGUI extends JFrame {
             public void run() {
                 refreshServerData();
             }
-        }, 0, 3000); // تحديث كل 3 ثواني
+        }, 0, 3000);
     }
 
     private void refreshServerData() {
@@ -364,7 +363,6 @@ public class ServerGUI extends JFrame {
 
                             String lastSeen = formatTimeAgo(lastSeenMillis);
 
-                            // تحديد لون حسب الحالة
                             Color statusColor = Color.BLACK;
                             switch (status) {
                                 case "ACTIVE": statusColor = Color.GREEN.darker(); break;
@@ -402,7 +400,6 @@ public class ServerGUI extends JFrame {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
     }
 
-    // ✅ أصبحت public بدل private
     public void clearOnlineUsers() {
         SwingUtilities.invokeLater(() -> {
             onlineUsersModel.setRowCount(0);
@@ -434,7 +431,6 @@ public class ServerGUI extends JFrame {
                     int totalMessages = mailServer.getMessageManager().getTotalMessagesCount();
                     int activeSessions = mailServer.getSessionManager().getOnlineCount();
 
-                    // تحديث الـ labels في الواجهة
                     Component[] components = getContentPane().getComponents();
                     for (Component comp : components) {
                         if (comp instanceof JPanel) {

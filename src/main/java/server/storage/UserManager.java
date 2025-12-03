@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 public class UserManager {
     private final Map<String, User> users = new ConcurrentHashMap<>();
-    // غير المسار إلى data/users.txt
     private static final String USERS_FILE = "data/users.txt";
 
     public UserManager() {
@@ -18,7 +17,6 @@ public class UserManager {
         File usersFile = new File(USERS_FILE);
         System.out.println("📂 Users file will be at: " + usersFile.getAbsolutePath());
 
-        // حذف ملف users.dat القديم إذا كان موجوداً
         File oldFile = new File("users.dat");
         if (oldFile.exists()) {
             oldFile.delete();

@@ -32,7 +32,7 @@ public class UDPNotifier extends Thread {
 
             while (running) {
                 try {
-                    udpSocket.setSoTimeout(1000); // Timeout 1 ثانية
+                    udpSocket.setSoTimeout(1000);
                     udpSocket.receive(packet);
                     String received = new String(packet.getData(), 0, packet.getLength()).trim();
                     InetAddress clientAddress = packet.getAddress();
@@ -41,7 +41,6 @@ public class UDPNotifier extends Thread {
                     handleUDPMessage(received, clientAddress, clientPort);
 
                 } catch (SocketTimeoutException e) {
-                    // طبيعي - مجرد timeout
                     continue;
                 } catch (Exception e) {
                     if (running) {

@@ -12,7 +12,6 @@ public class MessageManager {
     private static final String MESSAGES_FILE = "data/messages.dat";
     private AtomicLong nextId;
 
-    // إحصائيات
     private Map<String, Integer> sendCounts = new ConcurrentHashMap<>();
     private Map<String, Integer> listCounts = new ConcurrentHashMap<>();
     private Map<String, Integer> retrCounts = new ConcurrentHashMap<>();
@@ -36,19 +35,16 @@ public class MessageManager {
 
             long timestamp = System.currentTimeMillis();
 
-            // حفظ لكل مستلم (INBOX)
             for (String to : recipList) {
                 Message msg = new Message(messageId, from, to, subject, body, timestamp);
                 String userKey = to.toLowerCase();
                 userMessages.computeIfAbsent(userKey, k -> new ArrayList<>()).add(0, msg);
             }
 
-            // حفظ في SENT للمرسل
             Message sentMsg = new Message(messageId, from, recipList, subject, body, timestamp);
             String sentKey = from.toLowerCase() + "_sent";
             userMessages.computeIfAbsent(sentKey, k -> new ArrayList<>()).add(0, sentMsg);
 
-            // تحديث الإحصائيات
             sendCounts.merge(from, 1, Integer::sum);
 
             saveMessages();
@@ -69,7 +65,6 @@ public class MessageManager {
 
         List<Message> messages = userMessages.getOrDefault(key, new ArrayList<>());
 
-        // ترتيب تنازلي حسب الوقت
         List<Message> sortedMessages = new ArrayList<>(messages);
         sortedMessages.sort((m1, m2) -> Long.compare(m2.getTimestamp(), m1.getTimestamp()));
 
@@ -104,7 +99,6 @@ public class MessageManager {
             }
         }
 
-        // تحديث إحصائيات LIST
         listCounts.merge(username, 1, Integer::sum);
 
         System.out.println("📋 LIST " + folder + " for " + username + " - " + result.size() + " messages");
@@ -119,13 +113,11 @@ public class MessageManager {
                             msg.getToList().contains(username);
 
                     if (canAccess) {
-                        // تحديث حالة القراءة إذا كان المستلم
                         if (msg.getToList().contains(username) && !msg.getFrom().equals(username)) {
                             msg.setRead(true);
                             saveMessages();
                         }
 
-                        // تحديث إحصائيات RETR
                         retrCounts.merge(username, 1, Integer::sum);
 
                         return String.format(
@@ -171,7 +163,6 @@ public class MessageManager {
         boolean found = false;
         String userKey = username.toLowerCase();
 
-        // البحث في INBOX و SENT
         String[] folders = {userKey, userKey + "_sent"};
 
         for (String folder : folders) {
@@ -274,7 +265,6 @@ public class MessageManager {
             userMessages.clear();
             userMessages.putAll(loaded);
 
-            // حساب أعلى ID
             long maxId = userMessages.values().stream()
                     .flatMap(List::stream)
                     .mapToLong(msg -> {
@@ -358,7 +348,6 @@ public class MessageManager {
         }
         System.out.println("=".repeat(60) + "\n");
     }
-    // أضف هذه الدالة في server/storage/MessageManager.java
     public int getTotalMessagesCount() {
         return countAllMessages();
     }

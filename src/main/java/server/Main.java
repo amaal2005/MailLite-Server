@@ -9,7 +9,6 @@ public class Main {
         System.out.println("🚀 Starting MailLite Server...");
         System.out.println("=".repeat(50));
 
-        // حذف ملفات الـ serialized القديمة إذا كانت تسبب مشاكل
         deleteOldSerializedFiles();
 
         javax.swing.SwingUtilities.invokeLater(() -> {
@@ -24,8 +23,8 @@ public class Main {
                 "messages.dat",
                 "data/users.dat",
                 "data/messages.dat",
-                "data/users.json",  // ← أضف هذا
-                "users.json"        // ← وهذا
+                "data/users.json",
+                "users.json"
         };
 
 
